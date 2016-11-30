@@ -1,4 +1,4 @@
-package me.yokeyword.fragmentation.helper;
+package me.yokeyword.fragmentation.helper.internal;
 
 import android.content.Context;
 import android.view.animation.Animation;
@@ -8,10 +8,11 @@ import me.yokeyword.fragmentation.R;
 import me.yokeyword.fragmentation.anim.FragmentAnimator;
 
 /**
+ * Hide
  * Created by YoKeyword on 16/7/26.
  */
 public final class AnimatorHelper {
-    private Animation noAnim, fixNoAnim;
+    private Animation noneAnim, noneAnimFixed;
     public Animation enterAnim, exitAnim, popEnterAnim, popExitAnim;
 
     private Context context;
@@ -26,24 +27,23 @@ public final class AnimatorHelper {
         initPopExitAnim();
     }
 
-    public Animation getNoAnim() {
-        if (noAnim == null) {
-            noAnim = AnimationUtils.loadAnimation(context, R.anim.no_anim);
+    public Animation getNoneAnim() {
+        if (noneAnim == null) {
+            noneAnim = AnimationUtils.loadAnimation(context, R.anim.no_anim);
         }
-        return noAnim;
+        return noneAnim;
     }
 
-    public Animation getFixNoAnim() {
-        if (fixNoAnim == null) {
-            fixNoAnim = new Animation() {
-            };
+    public Animation getNoneAnimFixed() {
+        if (noneAnimFixed == null) {
+            noneAnimFixed = new Animation() {};
         }
-        return fixNoAnim;
+        return noneAnimFixed;
     }
 
     private Animation initEnterAnim() {
         if (fragmentAnimator.getEnter() == 0) {
-            enterAnim = getNoAnim();
+            enterAnim = AnimationUtils.loadAnimation(context, R.anim.no_anim);
         } else {
             enterAnim = AnimationUtils.loadAnimation(context, fragmentAnimator.getEnter());
         }
@@ -52,7 +52,7 @@ public final class AnimatorHelper {
 
     private Animation initExitAnim() {
         if (fragmentAnimator.getExit() == 0) {
-            exitAnim = getNoAnim();
+            exitAnim = AnimationUtils.loadAnimation(context, R.anim.no_anim);
         } else {
             exitAnim = AnimationUtils.loadAnimation(context, fragmentAnimator.getExit());
         }
@@ -61,7 +61,7 @@ public final class AnimatorHelper {
 
     private Animation initPopEnterAnim() {
         if (fragmentAnimator.getPopEnter() == 0) {
-            popEnterAnim = getNoAnim();
+            popEnterAnim = AnimationUtils.loadAnimation(context, R.anim.no_anim);
         } else {
             popEnterAnim = AnimationUtils.loadAnimation(context, fragmentAnimator.getPopEnter());
         }

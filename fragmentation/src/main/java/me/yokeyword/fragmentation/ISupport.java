@@ -4,7 +4,7 @@ package me.yokeyword.fragmentation;
 /**
  * Created by YoKeyword on 16/6/1.
  */
-public interface ISupport {
+interface ISupport {
 
     /**
      * 加载根Fragment, 即Activity内的第一个Fragment 或 Fragment内的第一个子Fragment
@@ -23,9 +23,17 @@ public interface ISupport {
      * 加载多个根Fragment
      *
      * @param containerId 容器id
-     * @param toFragments  目标Fragments
+     * @param toFragments 目标Fragments
      */
     void loadMultipleRootFragment(int containerId, int showPosition, SupportFragment... toFragments);
+
+    /**
+     * show一个Fragment,hide上一个Fragment
+     * 使用该方法时，要确保同级栈内无多余的Fragment,(只有通过loadMultipleRootFragment()载入的Fragment)
+     *
+     * @param showFragment 需要show的Fragment
+     */
+    void showHideFragment(SupportFragment showFragment);
 
     /**
      * show一个Fragment,hide一个Fragment ; 主要用于类似微信主页那种 切换tab的情况
@@ -43,12 +51,16 @@ public interface ISupport {
     void start(SupportFragment toFragment);
 
     /**
+     * 启动目标Fragment
+     *
      * @param toFragment 目标Fragment
      * @param launchMode 启动模式
      */
     void start(SupportFragment toFragment, @SupportFragment.LaunchMode int launchMode);
 
     /**
+     * 类似startActivityForResult
+     *
      * @param toFragment  目标Fragment
      * @param requestCode requsetCode
      */
@@ -73,6 +85,8 @@ public interface ISupport {
      */
     <T extends SupportFragment> T findFragment(Class<T> fragmentClass);
 
+    <T extends SupportFragment> T findFragment(String fragmentTag);
+
     /**
      * 出栈
      */
@@ -86,6 +100,8 @@ public interface ISupport {
      */
     void popTo(Class<?> fragmentClass, boolean includeSelf);
 
+    void popTo(String fragmentTag, boolean includeSelf);
+
     /**
      * 出栈到目标Fragment,并在出栈后立即进行Fragment事务(可以防止出栈后,直接进行Fragment事务的异常)
      *
@@ -94,4 +110,6 @@ public interface ISupport {
      * @param afterPopTransactionRunnable 出栈后紧接着的Fragment事务
      */
     void popTo(Class<?> fragmentClass, boolean includeSelf, Runnable afterPopTransactionRunnable);
+
+    void popTo(String fragmentTag, boolean includeSelf, Runnable afterPopTransactionRunnable);
 }

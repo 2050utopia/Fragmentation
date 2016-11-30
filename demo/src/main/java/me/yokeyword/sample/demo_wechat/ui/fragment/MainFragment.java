@@ -14,7 +14,6 @@ import me.yokeyword.sample.R;
 import me.yokeyword.sample.demo_wechat.base.BaseFragment;
 import me.yokeyword.sample.demo_wechat.event.StartBrotherEvent;
 import me.yokeyword.sample.demo_wechat.event.TabSelectedEvent;
-import me.yokeyword.sample.demo_wechat.ui.fragment.first.MsgFragment;
 import me.yokeyword.sample.demo_wechat.ui.fragment.first.WechatFirstTabFragment;
 import me.yokeyword.sample.demo_wechat.ui.fragment.second.WechatSecondTabFragment;
 import me.yokeyword.sample.demo_wechat.ui.fragment.third.WechatThirdTabFragment;
@@ -81,10 +80,20 @@ public class MainFragment extends BaseFragment {
                 .addItem(new BottomBarTab(_mActivity, R.drawable.ic_account_circle_white_24dp, "联系人"))
                 .addItem(new BottomBarTab(_mActivity, R.drawable.ic_discover_white_24dp, "发现"));
 
+        // 模拟未读消息
+        mBottomBar.getItem(FIRST).setUnreadCount(9);
+
         mBottomBar.setOnTabSelectedListener(new BottomBar.OnTabSelectedListener() {
             @Override
             public void onTabSelected(int position, int prePosition) {
                 showHideFragment(mFragments[position], mFragments[prePosition]);
+
+                BottomBarTab tab = mBottomBar.getItem(FIRST);
+                if (position == FIRST) {
+                    tab.setUnreadCount(0);
+                } else {
+                    tab.setUnreadCount(tab.getUnreadCount() + 1);
+                }
             }
 
             @Override

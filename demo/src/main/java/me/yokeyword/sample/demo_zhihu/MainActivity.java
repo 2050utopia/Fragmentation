@@ -2,19 +2,21 @@ package me.yokeyword.sample.demo_zhihu;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import org.greenrobot.eventbus.EventBus;
 
 import me.yokeyword.fragmentation.SupportActivity;
 import me.yokeyword.fragmentation.SupportFragment;
 import me.yokeyword.fragmentation.anim.FragmentAnimator;
+import me.yokeyword.fragmentation.helper.FragmentLifecycleCallbacks;
 import me.yokeyword.sample.R;
+import me.yokeyword.sample.demo_zhihu.base.BaseMainFragment;
 import me.yokeyword.sample.demo_zhihu.event.TabSelectedEvent;
-import me.yokeyword.sample.demo_zhihu.base.BaseLazyMainFragment;
-import me.yokeyword.sample.demo_zhihu.ui.fragment.first.child.FirstHomeFragment;
 import me.yokeyword.sample.demo_zhihu.ui.fragment.first.ZhihuFirstFragment;
-import me.yokeyword.sample.demo_zhihu.ui.fragment.fourth.child.MeFragment;
+import me.yokeyword.sample.demo_zhihu.ui.fragment.first.child.FirstHomeFragment;
 import me.yokeyword.sample.demo_zhihu.ui.fragment.fourth.ZhihuFourthFragment;
+import me.yokeyword.sample.demo_zhihu.ui.fragment.fourth.child.MeFragment;
 import me.yokeyword.sample.demo_zhihu.ui.fragment.second.ZhihuSecondFragment;
 import me.yokeyword.sample.demo_zhihu.ui.fragment.second.child.ViewPagerFragment;
 import me.yokeyword.sample.demo_zhihu.ui.fragment.third.ZhihuThirdFragment;
@@ -26,7 +28,7 @@ import me.yokeyword.sample.demo_zhihu.ui.view.BottomBarTab;
  * 类知乎 复杂嵌套Demo tip: 多使用右上角的"查看栈视图"
  * Created by YoKeyword on 16/6/2.
  */
-public class MainActivity extends SupportActivity implements BaseLazyMainFragment.OnBackToFirstListener {
+public class MainActivity extends SupportActivity implements BaseMainFragment.OnBackToFirstListener {
     public static final int FIRST = 0;
     public static final int SECOND = 1;
     public static final int THIRD = 2;
@@ -64,6 +66,17 @@ public class MainActivity extends SupportActivity implements BaseLazyMainFragmen
         }
 
         initView();
+
+
+        // 可以监听该Activity下的所有Fragment的18个 生命周期方法
+        registerFragmentLifecycleCallbacks(new FragmentLifecycleCallbacks() {
+
+            @Override
+            public void onFragmentSupportVisible(SupportFragment fragment) {
+                super.onFragmentSupportVisible(fragment);
+                Log.i("MainActivity", "onFragmentSupportVisible---> Tag:" + fragment.getTag());
+            }
+        });
     }
 
     @Override

@@ -8,14 +8,21 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 
+import java.util.ArrayList;
+
 import me.yokeyword.fragmentation.anim.DefaultVerticalAnimator;
 import me.yokeyword.fragmentation.anim.FragmentAnimator;
+import me.yokeyword.fragmentation.helper.FragmentLifecycleCallbacks;
+import me.yokeyword.fragmentation.helper.internal.LifecycleHelper;
 
 /**
  * Created by YoKeyword on 16/1/22.
  */
 public class SupportActivity extends AppCompatActivity implements ISupport {
     private Fragmentation mFragmentation;
+
+    private LifecycleHelper mLifecycleHelper;
+    private ArrayList<FragmentLifecycleCallbacks> mFragmentLifecycleCallbacks;
 
     private FragmentAnimator mFragmentAnimator;
 
@@ -33,8 +40,25 @@ public class SupportActivity extends AppCompatActivity implements ISupport {
         super.onCreate(savedInstanceState);
 
         mFragmentation = getFragmentation();
-
         mFragmentAnimator = onCreateFragmentAnimator();
+    }
+
+    public void registerFragmentLifecycleCallbacks(FragmentLifecycleCallbacks callback) {
+        synchronized (this) {
+            if (mFragmentLifecycleCallbacks == null) {
+                mFragmentLifecycleCallbacks = new ArrayList<>();
+                mLifecycleHelper = new LifecycleHelper(mFragmentLifecycleCallbacks);
+            }
+            mFragmentLifecycleCallbacks.add(callback);
+        }
+    }
+
+    public void unregisterFragmentLifecycleCallbacks(FragmentLifecycleCallbacks callback) {
+        synchronized (this) {
+            if (mFragmentLifecycleCallbacks != null) {
+                mFragmentLifecycleCallbacks.remove(callback);
+            }
+        }
     }
 
     Fragmentation getFragmentation() {
@@ -103,9 +127,8 @@ public class SupportActivity extends AppCompatActivity implements ISupport {
     /**
      * 不建议复写该方法,请使用 {@link #onBackPressedSupport} 代替
      */
-    @Deprecated
     @Override
-    public void onBackPressed() {
+    final public void onBackPressed() {
         // 这里是防止动画过程中，按返回键取消加载Fragment
         if (!mFragmentClickable) {
             setFragmentClickable(true);
@@ -130,26 +153,63 @@ public class SupportActivity extends AppCompatActivity implements ISupport {
         }
     }
 
+    /**
+     * 加载根Fragment, 即Activity内的第一个Fragment 或 Fragment内的第一个子Fragment
+     *
+     * @param containerId 容器id
+     * @param toFragment  目标Fragment
+     */
     @Override
     public void loadRootFragment(int containerId, SupportFragment toFragment) {
         mFragmentation.loadRootTransaction(getSupportFragmentManager(), containerId, toFragment);
     }
 
+    /**
+     * 以replace方式加载根Fragment
+     */
     @Override
     public void replaceLoadRootFragment(int containerId, SupportFragment toFragment, boolean addToBack) {
         mFragmentation.replaceLoadRootTransaction(getSupportFragmentManager(), containerId, toFragment, addToBack);
     }
 
+    /**
+     * 加载多个根Fragment
+     *
+     * @param containerId 容器id
+     * @param toFragments 目标Fragments
+     */
     @Override
     public void loadMultipleRootFragment(int containerId, int showPosition, SupportFragment... toFragments) {
         mFragmentation.loadMultipleRootTransaction(getSupportFragmentManager(), containerId, showPosition, toFragments);
     }
 
+    /**
+     * show一个Fragment,hide上一个Fragment
+     * 使用该方法时，要确保同级栈内无多余的Fragment,(只有通过loadMultipleRootFragment()载入的Fragment)
+     *
+     * @param showFragment 需要show的Fragment
+     */
+    @Override
+    public void showHideFragment(SupportFragment showFragment) {
+        showHideFragment(showFragment, null);
+    }
+
+    /**
+     * show一个Fragment,hide一个Fragment ; 主要用于类似微信主页那种 切换tab的情况
+     *
+     * @param showFragment 需要show的Fragment
+     * @param hideFragment 需要hide的Fragment
+     */
     @Override
     public void showHideFragment(SupportFragment showFragment, SupportFragment hideFragment) {
         mFragmentation.showHideFragment(getSupportFragmentManager(), showFragment, hideFragment);
     }
 
+    /**
+     * 启动目标Fragment
+     *
+     * @param toFragment 目标Fragment
+     */
     @Override
     public void start(SupportFragment toFragment) {
         start(toFragment, SupportFragment.STANDARD);
@@ -183,7 +243,13 @@ public class SupportActivity extends AppCompatActivity implements ISupport {
      */
     @Override
     public <T extends SupportFragment> T findFragment(Class<T> fragmentClass) {
-        return mFragmentation.findStackFragment(fragmentClass, getSupportFragmentManager(), false);
+        return mFragmentation.findStackFragment(fragmentClass, null, getSupportFragmentManager());
+    }
+
+    @Override
+    public <T extends SupportFragment> T findFragment(String fragmentTag) {
+        Fragmentation.checkNotNull(fragmentTag, "tag == null");
+        return mFragmentation.findStackFragment(null, fragmentTag, getSupportFragmentManager());
     }
 
     /**
@@ -202,7 +268,12 @@ public class SupportActivity extends AppCompatActivity implements ISupport {
      */
     @Override
     public void popTo(Class<?> fragmentClass, boolean includeSelf) {
-        mFragmentation.popTo(fragmentClass, includeSelf, null, getSupportFragmentManager());
+        popTo(fragmentClass.getName(), includeSelf);
+    }
+
+    @Override
+    public void popTo(String fragmentTag, boolean includeSelf) {
+        popTo(fragmentTag, includeSelf, null);
     }
 
     /**
@@ -210,7 +281,12 @@ public class SupportActivity extends AppCompatActivity implements ISupport {
      */
     @Override
     public void popTo(Class<?> fragmentClass, boolean includeSelf, Runnable afterPopTransactionRunnable) {
-        mFragmentation.popTo(fragmentClass, includeSelf, afterPopTransactionRunnable, getSupportFragmentManager());
+        popTo(fragmentClass.getName(), includeSelf, afterPopTransactionRunnable);
+    }
+
+    @Override
+    public void popTo(String fragmentTag, boolean includeSelf, Runnable afterPopTransactionRunnable) {
+        mFragmentation.popTo(fragmentTag, includeSelf, afterPopTransactionRunnable, getSupportFragmentManager());
     }
 
     void preparePopMultiple() {
@@ -219,6 +295,15 @@ public class SupportActivity extends AppCompatActivity implements ISupport {
 
     void popFinish() {
         mPopMultipleNoAnim = false;
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mFragmentLifecycleCallbacks != null) {
+            mFragmentLifecycleCallbacks.clear();
+        }
     }
 
     @Override
@@ -267,5 +352,23 @@ public class SupportActivity extends AppCompatActivity implements ISupport {
      */
     public void logFragmentStackHierarchy(String TAG) {
         mFragmentation.logFragmentRecords(TAG);
+    }
+
+    void dispatchFragmentLifecycle(int lifecycle, SupportFragment fragment) {
+        dispatchFragmentLifecycle(lifecycle, fragment, null);
+    }
+
+    void dispatchFragmentLifecycle(int lifecycle, SupportFragment fragment, Bundle bundle) {
+        dispatchFragmentLifecycle(lifecycle, fragment, bundle, false);
+    }
+
+    void dispatchFragmentLifecycle(int lifecycle, SupportFragment fragment, boolean visible) {
+        dispatchFragmentLifecycle(lifecycle, fragment, null, visible);
+    }
+
+    void dispatchFragmentLifecycle(int lifecycle, SupportFragment fragment, Bundle bundle, boolean visible) {
+        if (mLifecycleHelper != null) {
+            mLifecycleHelper.dispatchLifecycle(lifecycle, fragment, bundle, visible);
+        }
     }
 }
